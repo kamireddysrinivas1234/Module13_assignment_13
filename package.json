@@ -1,0 +1,12 @@
+{
+  "name": "jwt-auth-fastapi-playwright",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.49.1",
+    "typescript": "5.7.2"
+  }
+}

@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Register</title>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; max-width: 680px; margin: 40px auto; padding: 0 16px; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 18px; }
+    label { display:block; margin-top: 12px; font-weight: 600; }
+    input { width: 100%; padding: 10px; margin-top: 6px; border-radius: 10px; border: 1px solid #ccc; }
+    button { margin-top: 14px; padding: 10px 14px; border-radius: 10px; border: 0; cursor: pointer; }
+    .row { display:flex; gap: 10px; }
+    .row > div { flex: 1; }
+    .msg { margin-top: 12px; padding: 10px; border-radius: 10px; }
+    .ok { background: #e9fbe9; border: 1px solid #9fe19f; }
+    .err { background: #ffecec; border: 1px solid #f1a6a6; }
+    small { color: #666; }
+    a { color: inherit; }
+  </style>
+</head>
+<body>
+  <h1>Create an account</h1>
+  <div class="card">
+    <form id="registerForm">
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" autocomplete="email" required />
+      <small>Must be a valid email address.</small>
+
+      <div class="row">
+        <div>
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" autocomplete="new-password" required />
+          <small>Minimum 8 characters.</small>
+        </div>
+        <div>
+          <label for="confirm">Confirm Password (optional)</label>
+          <input id="confirm" name="confirm" type="password" autocomplete="new-password" />
+        </div>
+      </div>
+
+      <button id="submitBtn" type="submit">Register</button>
+    </form>
+    <div id="message" class="msg" style="display:none;"></div>
+    <p style="margin-top:14px;">Already have an account? <a href="/static/login.html">Login</a></p>
+  </div>
+
+  <script>
+    const MIN_LEN = 8;
+
+    function showMessage(kind, text){
+      const el = document.getElementById("message");
+      el.style.display = "block";
+      el.className = "msg " + (kind === "ok" ? "ok" : "err");
+      el.textContent = text;
+    }
+
+    function isValidEmail(email) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
+    document.getElementById("registerForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+      const confirm = document.getElementById("confirm").value;
+
+      if (!isValidEmail(email)) {
+        showMessage("err", "Please enter a valid email address.");
+        return;
+      }
+      if (password.length < MIN_LEN) {
+        showMessage("err", "Password must be at least 8 characters.");
+        return;
+      }
+      if (confirm && confirm !== password) {
+        showMessage("err", "Passwords do not match.");
+        return;
+      }
+
+      try {
+        const res = await fetch("/register", {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({email, password})
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          const msg = data.detail ? String(data.detail) : "Registration failed.";
+          showMessage("err", msg);
+          return;
+        }
+
+        if (data.access_token) {
+          localStorage.setItem("jwt_token", data.access_token);
+        }
+        showMessage("ok", "Registration successful! JWT saved to localStorage.");
+      } catch (err) {
+        showMessage("err", "Network error. Is the API running?");
+      }
+    });
+  </script>
+</body>
+</html>

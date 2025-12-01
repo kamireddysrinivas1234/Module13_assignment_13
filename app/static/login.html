@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login</title>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; max-width: 680px; margin: 40px auto; padding: 0 16px; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 18px; }
+    label { display:block; margin-top: 12px; font-weight: 600; }
+    input { width: 100%; padding: 10px; margin-top: 6px; border-radius: 10px; border: 1px solid #ccc; }
+    button { margin-top: 14px; padding: 10px 14px; border-radius: 10px; border: 0; cursor: pointer; }
+    .msg { margin-top: 12px; padding: 10px; border-radius: 10px; }
+    .ok { background: #e9fbe9; border: 1px solid #9fe19f; }
+    .err { background: #ffecec; border: 1px solid #f1a6a6; }
+    a { color: inherit; }
+  </style>
+</head>
+<body>
+  <h1>Login</h1>
+  <div class="card">
+    <form id="loginForm">
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" autocomplete="email" required />
+
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required />
+
+      <button id="submitBtn" type="submit">Login</button>
+    </form>
+    <div id="message" class="msg" style="display:none;"></div>
+    <p style="margin-top:14px;">No account? <a href="/static/register.html">Register</a></p>
+  </div>
+
+  <script>
+    function showMessage(kind, text){
+      const el = document.getElementById("message");
+      el.style.display = "block";
+      el.className = "msg " + (kind === "ok" ? "ok" : "err");
+      el.textContent = text;
+    }
+
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+
+      if (!email || !password) {
+        showMessage("err", "Please enter email and password.");
+        return;
+      }
+
+      try {
+        const res = await fetch("/login", {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({email, password})
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          const msg = data.detail ? String(data.detail) : "Login failed.";
+          showMessage("err", msg);
+          return;
+        }
+
+        if (data.access_token) {
+          localStorage.setItem("jwt_token", data.access_token);
+        }
+        showMessage("ok", "Login successful! JWT saved to localStorage.");
+      } catch (err) {
+        showMessage("err", "Network error. Is the API running?");
+      }
+    });
+  </script>
+</body>
+</html>
